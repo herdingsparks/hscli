@@ -26,7 +26,7 @@ curl -fsSL https://github.com/herdingsparks/hscli/releases/latest/download/insta
 ```
 
 `HSCLI_VERSION=0.1.0` picks a release, `HSCLI_BIN_DIR` another directory.
-Or build it with [Hull](https://gethull.dev) 0.20.1 or later:
+Or build it with [Hull](https://gethull.dev) 0.22.2 or later:
 `hull build -o hscli .`, then put `hscli` on your PATH.
 
 Then, with the host name and key you were sent:

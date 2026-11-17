@@ -3,7 +3,7 @@
 Things hscli needs from Hull that Hull does not provide yet. As in hsctl,
 each is worked around here in the narrowest way and reported to Hull
 rather than coded around. The numbers are stable: code and docs refer to
-them. Found with Hull 0.20.1, 2026-11-17.
+them. Found with Hull 0.20.1, 2026-11-17; none is addressed in 0.22.2.
 
 ## 1. An app can't start another program
 
