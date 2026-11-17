@@ -41,4 +41,4 @@ Claude Code and Codex follow after a spike (§16.3).
 ## Licence
 
 hscli is free software under the GNU Affero General Public License,
-version 3 (SPDX: `AGPL-3.0-only`). See [LICENSE](LICENSE).
+version 3 or (at your option) any later version (SPDX: `AGPL-3.0-or-later`). See [LICENSE](LICENSE).
