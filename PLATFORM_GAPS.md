@@ -49,3 +49,14 @@ names the variable to set.
 
 **Asked of Hull:** a coded error (`{ code: "denied", host }`), as `hull/ssh`
 gives for a host outside its grant.
+
+## 4. Terminal input can't be hidden
+
+`hscli login` reads the key from stdin. Typed or pasted at a terminal, it
+shows while it is entered.
+
+**Worked around:** the README says to pipe it (`pbpaste | hscli login`) or
+paste and press Ctrl-D; it is never in argv.
+
+**Asked of Hull:** a no-echo read for a terminal stdin
+(`ctx.stdin.readSecret()`), as `getpass` does.
