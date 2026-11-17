@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Set up the Pi coding agent (https://pi.dev) to use the Herding Sparks API.
 #
-#   bash setup.sh            asks for the key (input hidden)
-#   HS_API_KEY=... bash setup.sh
+#   HSCLI_API_HOST=<host> bash setup.sh            asks for the key (input hidden)
+#   HSCLI_API_HOST=<host> HS_API_KEY=... bash setup.sh
+#
+# HSCLI_API_HOST is the API's host name, sent with your key; the API is
+# https://$HSCLI_API_HOST/v1.
 #
 # What it does:
 #   1. installs Pi with npm if `pi` isn't on PATH (needs Node >= 20.6);
@@ -14,13 +17,19 @@
 # Run it again to replace the key or repair the configuration.
 set -euo pipefail
 
-BASE_URL="https://api.sparks.artalis.io/v1"
 MODEL="qwen38-fp4"
 KEY_DIR="$HOME/.config/herding-sparks"
 KEY_FILE="$KEY_DIR/api-key"
 PI_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
 
 die() { echo "setup: $*" >&2; exit 1; }
+
+host="${HSCLI_API_HOST:-}"
+[ -n "$host" ] || die "set HSCLI_API_HOST to the API's host name (sent with your key)"
+case "$host" in
+  */*|*:*|*" "*) die "HSCLI_API_HOST is a bare host name, not a URL or host:port: $host" ;;
+esac
+BASE_URL="https://$host/v1"
 
 command -v node >/dev/null || die "Node.js >= 20.6 is needed: https://nodejs.org"
 node -e 'const [a,b]=process.versions.node.split(".").map(Number); process.exit(a>20||(a==20&&b>=6)?0:1)' \

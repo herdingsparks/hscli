@@ -1,14 +1,15 @@
 # Pi with the Herding Sparks API
 
 [Pi](https://pi.dev) is a terminal coding agent. These steps point it at
-the Herding Sparks API (`https://api.sparks.artalis.io/v1`, model
-`qwen38-fp4`). Tested with Pi 0.73.1 on 2026-11-17.
+the Herding Sparks API (model `qwen38-fp4`). Tested with Pi 0.73.1 on 2026-11-17.
 
 ## Setup
 
-You need Node.js 20.6 or later and the key you were sent.
+You need Node.js 20.6 or later, and the key and the API's host name you
+were sent.
 
 ```bash
+export HSCLI_API_HOST=<the host name you were sent>
 bash setup.sh
 ```
 
@@ -44,14 +45,15 @@ pi
 
 ## Manual configuration
 
-If you'd rather not run the script, add this to `~/.pi/agent/models.json`
+If you'd rather not run the script, add this to `~/.pi/agent/models.json`,
+with `<host>` the host name you were sent,
 and put the key in the `HS_API_KEY` environment variable:
 
 ```json
 {
   "providers": {
     "herding-sparks": {
-      "baseUrl": "https://api.sparks.artalis.io/v1",
+      "baseUrl": "https://<host>/v1",
       "api": "openai-completions",
       "apiKey": "HS_API_KEY",
       "compat": {
@@ -80,7 +82,7 @@ and put the key in the `HS_API_KEY` environment variable:
 and start it with `pi --model herding-sparks/qwen38-fp4`.
 
 Any other OpenAI-compatible client works the same way: base URL
-`https://api.sparks.artalis.io/v1`, the key as the API key, model
+`https://<host>/v1`, the key as the API key, model
 `qwen38-fp4`, streaming on, `max_tokens` at most 16,384.
 
 ## Feedback
