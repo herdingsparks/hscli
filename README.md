@@ -37,3 +37,8 @@ directory, so the shell functions launch the harnesses and the user's own
 harness configuration is never touched. See [PLATFORM_GAPS.md](PLATFORM_GAPS.md).
 
 Claude Code and Codex follow after a spike (§16.3).
+
+## Licence
+
+hscli is free software under the GNU Affero General Public License,
+version 3 (SPDX: `AGPL-3.0-only`). See [LICENSE](LICENSE).
