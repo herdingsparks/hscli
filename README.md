@@ -15,28 +15,61 @@ The repositories:
 - **hscli** (this one) is the client, for third parties and for the
   operator (`hsctl run HARNESS` hands off to it).
 
-## Today
+## Install and use
 
-- [`pi/`](pi/): a setup script and guide for the Pi coding agent. Moved
-  from herding-sparks `clients/pi` (#232, #235) on 2026-11-17.
+Build it with [Hull](https://gethull.dev) 0.20.1 or later (releases with
+signed binaries will follow):
 
-## Planned (herding-sparks `docs/third-party-serving.md` §16, P7)
+```sh
+hull build -o hscli .            # then put hscli on your PATH
+```
 
-A [Hull](https://gethull.dev) application, like hsctl: one signed binary
-per platform, on GitHub releases.
+Then, with the host name and key you were sent:
+
+```sh
+export HSCLI_API_HOST=<the host name you were sent>    # in ~/.zshrc or ~/.bashrc too
+hscli login                      # paste the key, then Ctrl-D (or: pbpaste | hscli login)
+hscli status                     # tier, limits, expiry, today's use
+eval "$(hscli shell-init)"       # in ~/.zshrc or ~/.bashrc too
+hs-pi                            # Pi, set up for the API
+hs-opencode                      # OpenCode
+hs-aider                         # Aider
+```
 
 | Command | What it does |
 | --- | --- |
-| `hscli login` | asks for the key, checks it, stores it in `~/.config/herding-sparks/api-key` (mode 600) |
-| `hscli status` | tier, expiry, limits, today's use per node and in total |
-| `hscli config HARNESS` | generate the harness's files in hscli's state directory from the key's own limits, and print them |
-| `hscli shell-init` | print shell functions (`hs-pi`, `hs-opencode`, `hs-aider`) that launch each harness with that configuration, for `eval "$(hscli shell-init)"` |
+| `hscli login [--stdin]` | reads the key from stdin, checks it with the API (`/v1/hs/key`), stores it in the state directory, mode 600 |
+| `hscli status [--json]` | the key's tier, expiry, limits, and today's use per node and in total |
+| `hscli config pi\|opencode\|aider` | generates that harness's files in the state directory from what the API says the key may do, and prints them |
+| `hscli shell-init` | prints the shell functions `hs-pi`, `hs-opencode`, `hs-aider` |
 
-Hull can't start another program or write outside the app's state
-directory, so the shell functions launch the harnesses and the user's own
-harness configuration is never touched. See [PLATFORM_GAPS.md](PLATFORM_GAPS.md).
+Each function regenerates its harness's files and starts it pointed at
+them: Pi with `-e <state>/pi-herding-sparks.js` (a Pi extension that
+registers the provider), OpenCode with `OPENCODE_CONFIG`, Aider with
+`--model-metadata-file` and `--model-settings-file` (the API requires
+`max_tokens`, which Aider doesn't send unless told). Your own harness
+configuration is never touched, and no generated file holds the key: each
+reads it from the key file. The context and output limits come from your
+key's tier, so a new tier needs nothing but starting the harness again.
 
-Claude Code and Codex follow after a spike (§16.3).
+The state directory is `~/.local/state/hscli` (`$XDG_STATE_HOME/hscli` when
+set; `$HULL_STATE_DIR` overrides). Hull makes it 0700.
+
+Hull can't start a program or write outside the state directory, and its
+terminal input isn't hidden, so a pasted key shows while you type it; see
+[PLATFORM_GAPS.md](PLATFORM_GAPS.md).
+
+Tested on 2026-11-17 against the live API with Pi 0.73.1, OpenCode 1.19.6
+and Aider 0.86.2: each fixed a bug in a small project; Pi's context
+followed the tier (65,536 standard, 131,072 legal), and a turn over the
+prompt limit was compacted and retried.
+
+Tests: `bash tests/unit.sh` (the generated files, the host rule).
+
+[`pi/setup.sh`](pi/) is the older Pi-only setup, for a machine without
+hscli.
+
+The operator gets a key the same way: `hsctl gateway key client | hscli login --stdin`.
 
 ## Licence
 
