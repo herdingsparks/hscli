@@ -82,6 +82,17 @@ test("the host only from HSCLI_API_HOST, and only a bare host name", () => {
     }
 });
 
+test("a key expiring within 14 days is warned of, with the date and days left", () => {
+    const now = Date.parse("2027-02-01T12:00:00Z");
+    const w = api.expiryWarning("2027-02-15T00:00:00+0000", now);
+    test.ok(w && w.includes("2027-02-15") && w.includes("in 14 days") && w.includes("hscli login"));
+    test.ok(api.expiryWarning("2027-02-02T00:00:00+0000", now).includes("in 1 day:"));
+    test.eq(api.expiryWarning("2027-02-16T00:00:00+0000", now), null);   // 15 days: not yet
+    test.eq(api.expiryWarning("2027-01-31T00:00:00+0000", now), null);   // already past: the API says key_expired
+    test.eq(api.expiryWarning(null, now), null);
+    test.eq(api.expiryWarning("soon", now), null);
+});
+
 app.main((ctx) => {
     let failed = 0;
     for (const [name, fn] of cases) {

@@ -18,7 +18,9 @@ The repositories:
 ## Getting started
 
 You will have been sent two things, over a secure channel: the **API host
-name** and your **API key** (`hsk_...`). The key is shown only once, when it
+name** and your **API key** (`hsk_...`). [TERMS.md](TERMS.md) says what the
+API serves, your key's limits, what each error means, how maintenance is
+announced, and how your data is handled. The key is shown only once, when it
 is issued, so keep it in your password manager. Don't paste it into chat,
 email or a ticket. hscli runs on macOS (Apple silicon) and Linux (x86_64 and
 arm64; Ubuntu 24.04, Debian 13, Fedora 39 or newer).
@@ -109,8 +111,9 @@ is. Any arguments go to the harness, so `hs-pi --help` shows Pi's.
 - **A daily token quota** counts prompt and output tokens. A prompt counts
   each time it is sent, so agent work uses millions a day. `hscli status`
   shows what is left. The quota resets at 00:00 UTC.
-- **Keys expire** after 90 days. Ask for a new key before then, and log in
-  with it. The old key is revoked.
+- **Keys expire** after 90 days. In the last 14 days, `hscli status`,
+  `hscli login` and every `hs-` command print a warning with the date. Ask
+  for a new key before then, and log in with it. The old key is revoked.
 - **Maintenance** moves you to the other node; requests already running
   finish first.
 
@@ -133,6 +136,19 @@ hscli and the harnesses show the API's error code. The usual ones:
 
 **If your key may have leaked** (pasted somewhere, a laptop lost), tell
 the operator at once. They revoke it and send you a new one.
+
+## Updating
+
+hscli doesn't update itself. To get the latest release, run the installer
+again; your key and settings stay as they are:
+
+```sh
+curl -fsSL https://github.com/herdingsparks/hscli/releases/latest/download/install.sh | sh
+hscli --version
+```
+
+The [releases](https://github.com/herdingsparks/hscli/releases) page says
+what changed.
 
 ## Removing hscli
 

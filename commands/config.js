@@ -83,6 +83,8 @@ export async function config(ctx, args) {
     api.host(ctx.env);
     const key = api.readKey();
     const d = await api.describe(ctx.env, key);
+    const w = api.expiryWarning(d.key.expires);
+    if (w) ctx.stderr.write(w + "\n");     // also with --quiet: hs-pi and the others show it at start
     const files = generate(harness, d, api.baseUrl(ctx.env), paths.real("api-key"));
     for (const [name, text] of Object.entries(files)) {
         fs.write(`@state/${name}`, text);
