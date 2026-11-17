@@ -13,16 +13,21 @@ The repositories:
 - **herding-sparks** provisions the nodes and runs the gateway on them;
 - **hsctl** is the operator's control application;
 - **hscli** (this one) is the client, for third parties and for the
-  operator (`hsctl run HARNESS` hands off to it).
+  operator.
 
 ## Install and use
 
-Build it with [Hull](https://gethull.dev) 0.20.1 or later (releases with
-signed binaries will follow):
+On macOS (Apple silicon) or Linux (x86_64, arm64), from the latest
+[release](https://github.com/herdingsparks/hscli/releases), checked
+against its `SHA256SUMS`, into `~/.local/bin`:
 
 ```sh
-hull build -o hscli .            # then put hscli on your PATH
+curl -fsSL https://github.com/herdingsparks/hscli/releases/latest/download/install.sh | sh
 ```
+
+`HSCLI_VERSION=0.1.0` picks a release, `HSCLI_BIN_DIR` another directory.
+Or build it with [Hull](https://gethull.dev) 0.20.1 or later:
+`hull build -o hscli .`, then put `hscli` on your PATH.
 
 Then, with the host name and key you were sent:
 
@@ -64,7 +69,10 @@ and Aider 0.86.2: each fixed a bug in a small project; Pi's context
 followed the tier (65,536 standard, 131,072 legal), and a turn over the
 prompt limit was compacted and retried.
 
-Tests: `bash tests/unit.sh` (the generated files, the host rule).
+Tests: `bash tests/unit.sh` (the generated files, the host rule);
+`sh tests/smoke.sh ./hscli` (a built binary runs). CI runs both on macOS
+and Linux; a tag `vX.Y.Z` matching `VERSION` in `app.js` publishes a
+release (`.github/workflows/release.yml`).
 
 [`pi/setup.sh`](pi/) is the older Pi-only setup, for a machine without
 hscli.
