@@ -14,6 +14,8 @@ export async function login(ctx, args) {
     const d = await api.describe(ctx.env, key);
     fs.write(api.KEY_FILE, key + "\n", { private: true });
     ctx.stderr.write(`key ${d.key.key_id} stored (policy ${d.key.policy}, expires ${d.key.expires ?? "never"})\n`);
+    const w = api.expiryWarning(d.key.expires);
+    if (w) ctx.stderr.write(w + "\n");
     return 0;
 }
 
@@ -28,6 +30,8 @@ export async function status(ctx, args) {
     api.host(ctx.env);
     const key = api.readKey();
     const d = await api.describe(ctx.env, key);
+    const w = api.expiryWarning(d.key.expires);
+    if (w) ctx.stderr.write(w + "\n");
     if (json) { ctx.stdout.write(JSON.stringify(d) + "\n"); return 0; }
     const k = d.key, l = k.limits, u = k.usage;
     const out = [
