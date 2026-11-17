@@ -1,0 +1,73 @@
+name: Release
+# A tag vX.Y.Z whose version app.js also says builds hscli on each platform,
+# smoke-tests it there, and publishes the archives with SHA256SUMS.
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { os: macos-15, target: macos-arm64 }
+          - { os: ubuntu-24.04, target: linux-x86_64 }
+          - { os: ubuntu-24.04-arm, target: linux-arm64 }
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: The tag is app.js's version
+        run: |
+          v=$(sed -n 's/^const VERSION = "\(.*\)";$/\1/p' app.js)
+          [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME, app.js says $v"; exit 1; }
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+      - uses: ./.github/actions/hull
+      - name: Build
+        run: hull build -o hscli .
+      - name: Unit
+        run: bash tests/unit.sh
+      - name: Smoke
+        run: sh tests/smoke.sh ./hscli "$VERSION"
+      - name: What it links against
+        run: file hscli; if [ "$RUNNER_OS" = Linux ]; then ldd hscli || true; else otool -L hscli; fi
+      - name: Archive
+        run: |
+          d="hscli-$VERSION-${{ matrix.target }}"
+          mkdir "$d" && cp hscli LICENSE README.md PLATFORM_GAPS.md "$d/"
+          tar -czf "$d.tar.gz" "$d"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: hscli-*.tar.gz
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        run: cd dist && sha256sum hscli-*.tar.gz > SHA256SUMS && cat SHA256SUMS
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/hscli-*.tar.gz dist/SHA256SUMS install.sh \
+            --title "hscli ${GITHUB_REF_NAME#v}" --notes-file - <<'EOF'
+          Install (macOS arm64, Linux x86_64 and arm64), into ~/.local/bin, the archive checked against SHA256SUMS:
+
+          ```sh
+          curl -fsSL https://github.com/herdingsparks/hscli/releases/latest/download/install.sh | sh
+          ```
+
+          Or download the archive for your platform, check it with `shasum -a 256 -c SHA256SUMS --ignore-missing`, and put `hscli` on your PATH. Then see the README: `export HSCLI_API_HOST=...`, `hscli login`, `hscli status`, `eval "$(hscli shell-init)"`.
+          EOF

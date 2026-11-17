@@ -1,0 +1,23 @@
+name: Install Hull
+description: Hull, pinned, from gethull.dev
+inputs:
+  version:
+    description: Hull release
+    default: v0.20.1
+runs:
+  using: composite
+  steps:
+    # GitHub's release download answers 504 for minutes at a time; the
+    # installer fetches with plain curl, so the whole install is retried.
+    - shell: bash
+      env:
+        HULL_VERSION: ${{ inputs.version }}
+      run: |
+        for i in 1 2 3 4 5 6; do
+          curl -fsSL --retry 5 --retry-all-errors https://gethull.dev/install.sh -o "$RUNNER_TEMP/install.sh" \
+            && sh "$RUNNER_TEMP/install.sh" && break
+          [ "$i" = 6 ] && exit 1
+          echo "install failed (attempt $i); retrying in $((i * 20)) s"; sleep $((i * 20))
+        done
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+        "$HOME/.local/bin/hull" version
