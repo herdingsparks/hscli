@@ -2,7 +2,7 @@
 
 What you can rely on when you use the API with a key issued to you: what it
 serves, the limits of your key, what the errors mean, how fast it is, how
-it is maintained, and how your data is handled. Version 2, 2026-11-17. The
+it is maintained, and how your data is handled. Version 3, 2026-11-18. The
 operator keeps the authoritative copy; this one is kept in step with it.
 Where it says "the host you were sent", that is the API host name that came
 with your key (`HSCLI_API_HOST` for hscli).
@@ -20,26 +20,25 @@ with your key (`HSCLI_API_HOST` for hscli).
 - **One key** per third party, sent as `Authorization: Bearer <key>`. The
   key is shown once, when it is issued. If it is lost, ask for a new one;
   the old one is revoked.
-- **Two tiers.** A key is issued on one of them. Both take prompts of up to
-  131,072 tokens:
-  - **standard**: 3 streams at once per node;
-  - **legal**: 2 streams at once per node, for long documents.
+- **One tier.** Every key takes prompts of up to 131,072 tokens, with 2
+  streams at once per node. (Versions 1 and 2 had a second tier; keys
+  issued on it have the same limits.)
 - The service runs on two nodes. Each conversation goes to the node that
   already holds its context, which makes later turns faster. If that node
   can't take the request, it goes to the other.
 
 ## 2. Limits per key
 
-| Limit | Standard | Legal | When it is exceeded |
-| --- | --- | --- | --- |
-| Streams at once | 3 per node, 6 in all | 2 per node, 4 in all | further requests wait in a queue |
-| Queue | 4 per node; a place is held up to 60 s | the same | `429 queue_full` at once when the queue is full; `queue_timeout` after 60 s |
-| `max_tokens` (or `max_completion_tokens`) | required, at most 16,384 | the same | `400 max_tokens_required`, `400 max_tokens_exceeded` |
-| Prompt | at most 131,072 tokens | the same | `400 prompt_too_long`, naming the count and the limit |
-| `n`, `best_of` | 1 or absent | the same | `400 unsupported_n` |
-| Request body | 4 MiB | the same | `413 body_too_large` |
-| Tokens per day | 20,000,000: 10,000,000 per node; resets at 00:00 UTC | the same | `429 quota_exceeded`, with `Retry-After` the seconds to midnight UTC |
-| Key expiry | 90 days from issue | the same | `401 key_expired` after it |
+| Limit | Per key | When it is exceeded |
+| --- | --- | --- |
+| Streams at once | 2 per node, 4 in all | further requests wait in a queue |
+| Queue | 4 per node; a place is held up to 60 s | `429 queue_full` at once when the queue is full; `queue_timeout` after 60 s |
+| `max_tokens` (or `max_completion_tokens`) | required, at most 16,384 | `400 max_tokens_required`, `400 max_tokens_exceeded` |
+| Prompt | at most 131,072 tokens | `400 prompt_too_long`, naming the count and the limit |
+| `n`, `best_of` | 1 or absent | `400 unsupported_n` |
+| Request body | 4 MiB | `413 body_too_large` |
+| Tokens per day | 20,000,000: 10,000,000 per node; resets at 00:00 UTC | `429 quota_exceeded`, with `Retry-After` the seconds to midnight UTC |
+| Key expiry | 90 days from issue | `401 key_expired` after it |
 
 A key is renewed by issuing a new one before the old one expires; the
 expiry of an issued key never changes.
