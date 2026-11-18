@@ -1,7 +1,9 @@
 # Pi with the Herding Sparks API
 
 [Pi](https://pi.dev) is a terminal coding agent. These steps point it at
-the Herding Sparks API (model `qwen38-fp4`). Tested with Pi 0.73.1 on 2026-11-17.
+the Herding Sparks API (model `qwen38-fp4`), for a machine without
+[hscli](../README.md), which does this for you (`hs-pi`). Tested with Pi
+0.73.1 on 2026-11-17.
 
 ## Setup
 
@@ -14,9 +16,10 @@ bash setup.sh
 ```
 
 It asks for the key without echoing it, installs Pi if needed, stores the
-key in `~/.config/herding-sparks/api-key` (readable only by you), adds the
-provider to `~/.pi/agent/models.json`, makes it Pi's default, and sends
-one short request to check the key. Your other Pi providers and settings
+key in `~/.config/herding-sparks/api-key` (readable only by you), asks the
+API what your key may do, adds the provider with those limits to
+`~/.pi/agent/models.json`, makes it Pi's default, and sends one short
+request to check the key. Run it again if your terms change. Your other Pi providers and settings
 are kept; the previous files are saved as `*.bak`.
 
 Then, in any project:
@@ -30,12 +33,14 @@ pi
 
 - **Thinking.** The model thinks before answering. `--thinking off`, or
   shift+tab in Pi, turns it off for quick work; `medium` is the default.
-- **Context.** Your key can send prompts up to 65,536 tokens. Pi is set to
-  compact the conversation once it passes about 41,000 tokens. If a single
+- **Context.** Your key can send prompts up to the limit `setup.sh`
+  prints (131,072 tokens on the standard terms). Pi is set to compact the
+  conversation once it is within about 24,500 tokens of it. If a single
   turn still goes over, the service answers "the prompt is too long", and
   Pi compacts and retries the turn by itself.
-- **Busy.** "queue_full" or "queue_timeout" means four of your requests
-  are already running on a node; Pi retries them. A long first prompt can
+- **Busy.** "queue_full" or "queue_timeout" means your key's requests
+  already fill its streams on a node (2 on the standard terms); Pi
+  retries them. A long first prompt can
   take 30 s or more before the first token.
 - **Daily limit.** 20 million tokens a day, reset at 00:00 UTC. Every turn
   resends the conversation, so long sessions count up quickly.
@@ -47,7 +52,10 @@ pi
 
 If you'd rather not run the script, add this to `~/.pi/agent/models.json`,
 with `<host>` the host name you were sent,
-and put the key in the `HS_API_KEY` environment variable:
+and put the key in the `HS_API_KEY` environment variable. Set
+`contextWindow` and `maxTokens` to your key's limits: the prompt and
+output limits in your terms, or what `hscli status` shows (131,072 and
+16,384 on the standard terms):
 
 ```json
 {
@@ -70,7 +78,7 @@ and put the key in the `HS_API_KEY` environment variable:
           "name": "Qwen (Herding Sparks)",
           "reasoning": true,
           "input": ["text"],
-          "contextWindow": 65536,
+          "contextWindow": 131072,
           "maxTokens": 16384
         }
       ]

@@ -10,10 +10,13 @@
 # What it does:
 #   1. installs Pi with npm if `pi` isn't on PATH (needs Node >= 20.6);
 #   2. stores the key in ~/.config/herding-sparks/api-key, readable only by you;
-#   3. adds a "herding-sparks" provider to ~/.pi/agent/models.json and makes
+#   3. asks the API what the key may do (GET /v1/hs/key), so Pi is told the
+#      key's own prompt and output limits;
+#   4. adds a "herding-sparks" provider to ~/.pi/agent/models.json and makes
 #      it Pi's default in ~/.pi/agent/settings.json, keeping everything else
 #      in both files (the old files are kept as *.bak);
-#   4. sends one short request to check the key.
+#   5. sends one short request to check the key.
+# Run it again after your terms change, so Pi gets the new limits.
 # Run it again to replace the key or repair the configuration.
 set -euo pipefail
 
@@ -52,10 +55,27 @@ mkdir -p "$KEY_DIR" "$PI_DIR"
 printf '%s\n' "$key" > "$KEY_FILE"
 chmod 600 "$KEY_FILE"
 
-# Merge into Pi's JSON files with Node, which Pi needs anyway.
+# Merge into Pi's JSON files with Node, which Pi needs anyway (its fetch
+# asks the API for the key's limits; the key goes in a header, not argv).
 KEY_FILE="$KEY_FILE" PI_DIR="$PI_DIR" BASE_URL="$BASE_URL" MODEL="$MODEL" node <<'EOF'
 const fs = require("fs"), path = require("path");
 const { KEY_FILE, PI_DIR, BASE_URL, MODEL } = process.env;
+
+(async () => {
+const key = fs.readFileSync(KEY_FILE, "utf8").trim();
+let res, doc = null;
+try {
+  res = await fetch(`${BASE_URL}/hs/key`, { headers: { Authorization: `Bearer ${key}`, Accept: "application/json" } });
+  doc = await res.json().catch(() => null);
+} catch (e) { console.error(`setup: cannot reach ${BASE_URL}: ${e.message}`); process.exit(1); }
+if (!res.ok || !doc?.limits) {
+  const e = doc?.error;
+  console.error(`setup: the API refused the key: ${e ? `${res.status} ${e.code}: ${e.message}` : `HTTP ${res.status}`}`);
+  process.exit(1);
+}
+const context = doc.limits.max_prompt_tokens, output = doc.limits.max_tokens ?? 16384;
+if (!context) { console.error("setup: the API gives no prompt limit for this key"); process.exit(1); }
+console.log(`the key may send prompts up to ${context} tokens and ask for up to ${output}`);
 
 function update(name, change) {
   const file = path.join(PI_DIR, name);
@@ -91,10 +111,9 @@ update("models.json", (m) => {
       name: "Qwen (Herding Sparks)",
       reasoning: true,
       input: ["text"],
-      // The key may send prompts up to 65,536 tokens and ask for up to
-      // 16,384 output tokens; Pi must stay inside both.
-      contextWindow: 65536,
-      maxTokens: 16384,
+      // The key's own limits, from the API: Pi must stay inside both.
+      contextWindow: context,
+      maxTokens: output,
       cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     }],
   };
@@ -104,10 +123,11 @@ update("settings.json", (s) => {
   s.defaultProvider = "herding-sparks";
   s.defaultModel = MODEL;
   if (!s.defaultThinkingLevel) s.defaultThinkingLevel = "medium";
-  // Compact once the conversation passes 65,536 - 24,576 = 40,960 tokens,
-  // leaving room for a turn's tool output before the prompt limit.
+  // Compact once the conversation is within 24,576 tokens of the prompt
+  // limit, leaving room for a turn's tool output.
   s.compaction = Object.assign({ enabled: true, keepRecentTokens: 20000 }, s.compaction, { reserveTokens: 24576 });
 });
+})();
 EOF
 
 echo "Checking the key..."
