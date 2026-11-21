@@ -1,7 +1,7 @@
 # Pi with the Herding Sparks API
 
 [Pi](https://pi.dev) is a terminal coding agent. These steps point it at
-the Herding Sparks API (model `qwen38-fp4`), for a machine without
+the Herding Sparks API (model `qwen3_8-flash-next-fp4-local`), for a machine without
 [hscli](../README.md), which does this for you (`hs-pi`). Tested with Pi
 0.73.1 on 2026-11-17.
 
@@ -74,7 +74,7 @@ output limits in your terms, or what `hscli status` shows (131,072 and
       },
       "models": [
         {
-          "id": "qwen38-fp4",
+          "id": "qwen3_8-flash-next-fp4-local",
           "name": "Qwen (Herding Sparks)",
           "reasoning": true,
           "input": ["text"],
@@ -87,11 +87,11 @@ output limits in your terms, or what `hscli status` shows (131,072 and
 }
 ```
 
-and start it with `pi --model herding-sparks/qwen38-fp4`.
+and start it with `pi --model herding-sparks/qwen3_8-flash-next-fp4-local`.
 
 Any other OpenAI-compatible client works the same way: base URL
 `https://<host>/v1`, the key as the API key, model
-`qwen38-fp4`, streaming on, `max_tokens` at most 16,384.
+`qwen3_8-flash-next-fp4-local`, streaming on, `max_tokens` at most 16,384.
 
 ## Feedback
 

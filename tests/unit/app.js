@@ -24,7 +24,7 @@ const KEYFILE = "/home/u/.local/state/hscli/api-key";
 const BASE = "https://api.example.test/v1";
 const doc = (limits) => ({
     key: { key_id: "0123456789ab", principal: "p", policy: "third-party", expires: null, limits, usage: {} },
-    models: [{ id: "qwen38-fp4", max_model_len: 262144 }],
+    models: [{ id: "qwen3_8-flash-next-fp4-local", max_model_len: 262144 }],
 });
 const STD = doc({ max_prompt_tokens: 65536, max_tokens: 16384 });
 const LEGAL = doc({ max_prompt_tokens: 131072, max_tokens: 16384 });
@@ -50,17 +50,17 @@ test("opencode: a provider reading the key from its file, the model chosen", () 
     const p = c.provider["herding-sparks"];
     test.eq(p.options.baseURL, BASE);
     test.eq(p.options.apiKey, `{file:${KEYFILE}}`);
-    test.eq(p.models["qwen38-fp4"].limit.context, 65536);
-    test.eq(p.models["qwen38-fp4"].limit.output, 16384);
-    test.eq(c.model, "herding-sparks/qwen38-fp4");
+    test.eq(p.models["qwen3_8-flash-next-fp4-local"].limit.context, 65536);
+    test.eq(p.models["qwen3_8-flash-next-fp4-local"].limit.output, 16384);
+    test.eq(c.model, "herding-sparks/qwen3_8-flash-next-fp4-local");
 });
 
 test("aider: metadata and max_tokens, which the API requires", () => {
     const f = generate("aider", LEGAL, BASE, KEYFILE);
-    const meta = JSON.parse(f["aider-models.json"])["openai/qwen38-fp4"];
+    const meta = JSON.parse(f["aider-models.json"])["openai/qwen3_8-flash-next-fp4-local"];
     test.eq(meta.max_input_tokens, 131072);
     test.eq(meta.max_output_tokens, 16384);
-    test.ok(f["aider-settings.yml"].includes("- name: openai/qwen38-fp4\n  extra_params:\n    max_tokens: 16384\n"));
+    test.ok(f["aider-settings.yml"].includes("- name: openai/qwen3_8-flash-next-fp4-local\n  extra_params:\n    max_tokens: 16384\n"));
 });
 
 test("no generated file holds a key", () => {

@@ -20,7 +20,7 @@
 # Run it again to replace the key or repair the configuration.
 set -euo pipefail
 
-MODEL="qwen38-fp4"
+MODEL="qwen3_8-flash-next-fp4-local"
 KEY_DIR="$HOME/.config/herding-sparks"
 KEY_FILE="$KEY_DIR/api-key"
 PI_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"

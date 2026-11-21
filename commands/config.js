@@ -96,7 +96,7 @@ export async function config(ctx, args) {
 export function shellInit(ctx, args) {
     if (args.length) { ctx.stderr.write("usage: eval \"$(hscli shell-init)\"\n"); return 2; }
     const p = (f) => paths.shq(paths.real(f));
-    const model = "qwen38-fp4";
+    const model = "qwen3_8-flash-next-fp4-local";
     ctx.stdout.write(`# hscli shell-init: start a harness with the Herding Sparks API.
 # Each function regenerates the harness's files from the key's own limits.
 hs-pi() { hscli config pi --quiet && pi -e ${p("pi-herding-sparks.js")} --model herding-sparks/${model} "$@"; }
