@@ -53,9 +53,9 @@ pbpaste | hscli login            # macOS
 wl-paste | hscli login           # Linux, Wayland (xclip -o -selection clipboard on X11)
 ```
 
-Or run `hscli login`, paste the key, press Enter, then Ctrl-D. The key
-shows on screen while you paste it, but it never goes into your shell's
-history. hscli checks the key with the API before keeping it, in
+Or run `hscli login` and paste the key at the prompt, then press Enter.
+The key does not show while you paste it, and it never goes into your
+shell's history. hscli checks the key with the API before keeping it, in
 `~/.local/state/hscli/api-key` (mode 600). It is the only copy on your
 machine. Clear your clipboard afterwards.
 
@@ -163,7 +163,7 @@ Then delete the two lines from `~/.zshrc` or `~/.bashrc`.
 
 `HSCLI_VERSION=0.1.0` makes `install.sh` install that release, and
 `HSCLI_BIN_DIR` installs to another directory. Or build hscli with
-[Hull](https://gethull.dev) 0.22.2 or later: `hull build -o hscli .`, then
+[Hull](https://gethull.dev) 0.23.1 or later: `hull build -o hscli .`, then
 put `hscli` on your PATH.
 
 | Command | What it does |
