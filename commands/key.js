@@ -5,11 +5,12 @@ import * as api from "../lib/api.js";
 
 export async function login(ctx, args) {
     if (args.length > 1 || (args.length === 1 && args[0] !== "--stdin")) {
-        ctx.stderr.write("usage: hscli login [--stdin]   (the key is read from stdin: paste it, then Ctrl-D, or pipe it)\n");
+        ctx.stderr.write("usage: hscli login [--stdin]   (paste the key at the prompt, or pipe it)\n");
         return 2;
     }
     api.host(ctx.env);
-    const key = String((await ctx.stdin.read("a")) ?? "").trim();
+    // One line, echo off on a terminal; from a pipe, the first line.
+    const key = String(ctx.stdin.readSecret("Herding Sparks API key: ") ?? "").trim();
     if (!api.KEY_RE.test(key)) throw new api.HscliError("that is not a Herding Sparks key (hsk_<12 hex>_<43 characters>)", 2);
     const d = await api.describe(ctx.env, key);
     fs.write(api.KEY_FILE, key + "\n", { private: true });
