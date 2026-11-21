@@ -15,7 +15,7 @@ with your key (`HSCLI_API_HOST` for hscli).
   `GET /v1/hs/key`, which reports your key's tier, limits, expiry and
   today's use (per node and in total). Anything else answers
   `404 not_found`.
-- **One model:** `qwen38-fp4`, with a context of 262,144 tokens (prompt plus
+- **One model:** `qwen3_8-flash-next-fp4-local`, with a context of 262,144 tokens (prompt plus
   output).
 - **One key** per third party, sent as `Authorization: Bearer <key>`. The
   key is shown once, when it is issued. If it is lost, ask for a new one;
@@ -87,7 +87,7 @@ the same object as an SSE event inside a `200` stream (§3). Act on `code`;
 | 400 | `stream_required`, `max_tokens_required`, `max_tokens_exceeded`, `max_tokens_over_budget`, `prompt_too_long`, `unsupported_n`, `invalid_json`, `invalid_max_tokens`, `invalid_stream`, `missing_model` | the request breaks a limit or isn't valid | fix the request; don't retry it unchanged |
 | 401 | `invalid_api_key` | the key is unknown or revoked | check the key |
 | 401 | `key_expired` | the key's expiry has passed | ask for a new key |
-| 403 | `model_not_permitted` | the key may not use that model | use `qwen38-fp4` |
+| 403 | `model_not_permitted` | the key may not use that model | use `qwen3_8-flash-next-fp4-local` |
 | 404 | `model_not_found`, `not_found` | no such model or path | |
 | 413 | `body_too_large` | the body is over 4 MiB | |
 | 429 | `queue_full`, `queue_timeout` | every slot is busy | retry after `Retry-After` |

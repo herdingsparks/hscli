@@ -95,7 +95,7 @@ is. Any arguments go to the harness, so `hs-pi --help` shows Pi's.
 
 ## What to expect
 
-- **One model**, `qwen38-fp4`. `hscli status` shows the prompt limit of your
+- **One model**, `qwen3_8-flash-next-fp4-local`. `hscli status` shows the prompt limit of your
   tier.
 - **Keep a conversation going.** The API sends every turn of a conversation
   to the node that already holds its context, so later turns start fast:

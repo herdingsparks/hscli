@@ -25,7 +25,7 @@ app.manifest({
     },
 });
 
-const VERSION = "0.1.2";
+const VERSION = "0.1.3";
 
 const COMMANDS = {
     login: { fn: key.login, help: "Store your API key, read from stdin, once the API accepts it" },
