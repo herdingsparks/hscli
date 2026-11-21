@@ -4,9 +4,10 @@ Things hscli needs from Hull that Hull does not provide yet. As in hsctl,
 each is worked around here in the narrowest way and reported to Hull
 rather than coded around. The numbers are stable: code and docs refer to
 them. Found with Hull 0.20.1, 2026-11-17. Hull 0.23.1 (2026-11-21) addresses 3 and 4,
-and hscli uses both; 1 and 2 are still open.
+and hscli uses both. 1 and 2 stay as they are, by decision (2026-11-21):
+nothing is asked of Hull for them.
 
-## 1. An app can't start another program
+## 1. An app can't start another program (kept, by decision)
 
 hscli's job ends in a harness (Pi, OpenCode, Aider) running with the
 configuration hscli made. Hull has no module that starts a program:
@@ -17,13 +18,12 @@ exist.
 that call `hscli config HARNESS` and then start the harness. The user adds
 `eval "$(hscli shell-init)"` to their shell's startup file.
 
-**Asked of Hull:** an exec grant, an allowlist of program names
-(`exec: ["pi", "opencode", "aider"]`), resolved on `PATH`, where the app
-replaces itself with the program (execve) with arguments and an
-environment it chooses. Replacing rather than spawning keeps the terminal,
-signals and exit status the harness's own.
+**Decided 2026-11-21: not asked of Hull.** An exec grant would have Hull
+start whatever program a name resolves to on `PATH`: an executable Hull
+knows nothing about. That is not wanted. The shell functions stay the way a
+harness is started.
 
-## 2. File grants can't reach the user's home
+## 2. File grants can't reach the user's home (kept, by decision)
 
 A file grant is a path under the app's state directory (`@state/`) or a
 literal path. A harness's own configuration (`~/.pi/agent/`,
@@ -35,9 +35,9 @@ directory and points the harness there (Pi's `-e` extension,
 `OPENCODE_CONFIG`, Aider's `--model-metadata-file`). The user's own
 configuration is never touched, which is the better default anyway.
 
-**Asked of Hull:** a `@home/` root for file grants
-(`fs: { write: ["@home/.pi/agent/models.json"] }`), so an app can offer to
-merge into a harness's configuration when the user asks.
+**Decided 2026-11-21: not asked of Hull.** The workaround is the better
+design: hscli's files live in its own state directory, and a harness's own
+configuration is never touched.
 
 ## 3. A refused host doesn't say it was refused (addressed in Hull 0.23.1)
 
