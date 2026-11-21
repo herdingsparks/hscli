@@ -1,10 +1,10 @@
 // hscli config HARNESS: the harness's files, generated in hscli's state
 // directory from what the API says the key may do, and printed. The user's
-// own harness configuration is never touched (PLATFORM_GAPS.md 2), and no
+// own harness configuration is never touched, and no
 // generated file holds the key: each reads it from the key file.
 //
 // hscli shell-init: shell functions that start each harness with them,
-// since a Hull app can't start a program (PLATFORM_GAPS.md 1).
+// since hscli itself never starts a program.
 import { fs } from "hull:fs";
 import * as api from "../lib/api.js";
 import * as paths from "../lib/paths.js";
