@@ -36,7 +36,7 @@ jobs:
       - name: Archive
         run: |
           d="hscli-$VERSION-${{ matrix.target }}"
-          mkdir "$d" && cp hscli LICENSE README.md PLATFORM_GAPS.md "$d/"
+          mkdir "$d" && cp hscli LICENSE README.md "$d/"
           tar -czf "$d.tar.gz" "$d"
       - uses: actions/upload-artifact@v4
         with:

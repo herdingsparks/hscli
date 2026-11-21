@@ -185,9 +185,9 @@ key's tier, so a new tier needs nothing but starting the harness again.
 The state directory is `~/.local/state/hscli` (`$XDG_STATE_HOME/hscli` when
 set; `$HULL_STATE_DIR` overrides). Hull makes it 0700.
 
-Hull can't start a program or write outside the state directory, and its
-terminal input isn't hidden, so a pasted key shows while you type it; see
-[PLATFORM_GAPS.md](PLATFORM_GAPS.md).
+hscli never starts a program and never writes outside its state directory:
+the `hs-` shell functions start the harness, and each harness is pointed at
+the files hscli made, so your own harness configuration is left alone.
 
 Tested on 2026-11-17 against the live API with Pi 0.73.1, OpenCode 1.19.6
 and Aider 0.86.2: each fixed a bug in a small project; Pi's context
