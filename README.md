@@ -163,8 +163,11 @@ Then delete the two lines from `~/.zshrc` or `~/.bashrc`.
 
 `HSCLI_VERSION=0.1.0` makes `install.sh` install that release, and
 `HSCLI_BIN_DIR` installs to another directory. Or build hscli with
-[Hull](https://gethull.dev) 0.23.1 or later: `hull build -o hscli .`, then
-put `hscli` on your PATH.
+[Hull](https://gethull.dev) 0.23.3 or later: `make`, then put `hscli` on
+your PATH. hscli is TypeScript (`app.ts`), which Hull runs with the types
+erased; `make` first runs Hull's gate, `hull check --types .`, which needs
+Node.js and npm for the TypeScript compiler pinned in `package.json`.
+`hull build -o hscli .` alone builds without the check.
 
 | Command | What it does |
 | --- | --- |
@@ -195,10 +198,11 @@ followed the tier, and a turn over the prompt limit was compacted and
 retried. The same day, hscli 0.1.1 from its release took Pi through a
 seven-turn coding session (87 requests, the context up to 64k tokens).
 
-Tests: `bash tests/unit.sh` (the generated files, the host rule);
-`sh tests/smoke.sh ./hscli` (a built binary runs). CI runs both on macOS
-and Linux; a tag `vX.Y.Z` matching `VERSION` in `app.js` publishes a
-release (`.github/workflows/release.yml`).
+Tests: `make check` (the type check, then `hull test`: tests/test_*.ts,
+the generated files and the host rule); `sh tests/smoke.sh ./hscli` (a
+built binary runs). CI runs both on macOS and Linux; a tag `vX.Y.Z`
+matching `VERSION` in `app.ts` publishes a release
+(`.github/workflows/release.yml`).
 
 [`pi/setup.sh`](pi/) is the older Pi-only setup, for a machine without
 hscli.

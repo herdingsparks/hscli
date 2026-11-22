@@ -1,28 +1,14 @@
-// Run: bash tests/unit.sh (it copies commands/ and lib/ next to this file)
-// hscli's harness files are derived from the API's answer, never fixed, and
-// never hold the key; the API's host only ever comes from HSCLI_API_HOST.
-import { app } from "hull:app";
-import { generate } from "./commands/config.js";
-import * as api from "./lib/api.js";
-
-app.manifest({ modules: ["hull/http-client@1", "hull/fs@1", "hull/encoding@1"], env: ["HSCLI_API_HOST"],
-               hosts: ["$HSCLI_API_HOST"], state: { name: "hscli-unit" } });
-
-const cases = [];
-const test = (name, fn) => cases.push([name, fn]);
-test.ok = (v) => { if (!v) throw new Error("not ok"); };
-test.eq = (a, b) => { if (a !== b) throw new Error(`${JSON.stringify(a)} !== ${JSON.stringify(b)}`); };
-test.err = (fn, pattern) => {
-    try { fn(); } catch (e) {
-        if (pattern && !String(e.message).includes(pattern)) throw new Error(`threw '${e.message}', not '${pattern}'`);
-        return;
-    }
-    throw new Error("did not throw");
-};
+// hull test: hscli's harness files are derived from the API's answer, never
+// fixed, and never hold the key; the API's host only ever comes from
+// HSCLI_API_HOST. Runs with `hull check --types` (make check); the built
+// binary is covered by tests/smoke.sh.
+import { generate } from "../commands/config.ts";
+import * as api from "../lib/api.ts";
+import type { Description, Limits } from "../lib/types.ts";
 
 const KEYFILE = "/home/u/.local/state/hscli/api-key";
 const BASE = "https://api.example.test/v1";
-const doc = (limits) => ({
+const doc = (limits: Limits): Description => ({
     key: { key_id: "0123456789ab", principal: "p", policy: "third-party", expires: null, limits, usage: {} },
     models: [{ id: "qwen3_8-flash-next-fp4-local", max_model_len: 262144 }],
 });
@@ -86,18 +72,9 @@ test("a key expiring within 14 days is warned of, with the date and days left", 
     const now = Date.parse("2027-02-01T12:00:00Z");
     const w = api.expiryWarning("2027-02-15T00:00:00+0000", now);
     test.ok(w && w.includes("2027-02-15") && w.includes("in 14 days") && w.includes("hscli login"));
-    test.ok(api.expiryWarning("2027-02-02T00:00:00+0000", now).includes("in 1 day:"));
+    test.ok((api.expiryWarning("2027-02-02T00:00:00+0000", now) ?? "").includes("in 1 day:"));
     test.eq(api.expiryWarning("2027-02-16T00:00:00+0000", now), null);   // 15 days: not yet
     test.eq(api.expiryWarning("2027-01-31T00:00:00+0000", now), null);   // already past: the API says key_expired
     test.eq(api.expiryWarning(null, now), null);
     test.eq(api.expiryWarning("soon", now), null);
-});
-
-app.main((ctx) => {
-    let failed = 0;
-    for (const [name, fn] of cases) {
-        try { fn(); ctx.stdout.write(`  PASS  ${name}\n`); } catch (e) { failed++; ctx.stdout.write(`  FAIL  ${name}: ${e.message}\n`); }
-    }
-    ctx.stdout.write(`hscli unit: ${cases.length - failed} passed, ${failed} failed\n`);
-    return failed ? 1 : 0;
 });

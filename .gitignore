@@ -1,1 +1,6 @@
 /hscli
+.DS_Store
+# Hull's TypeScript declarations: `make types` (hull types) installs them
+# from the hull that builds.
+/types/
+/node_modules/

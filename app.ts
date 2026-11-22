@@ -7,10 +7,11 @@
 // ~/.local/state/hscli, or $HULL_STATE_DIR) holds the key (mode 600) and the
 // generated harness files.
 import { app } from "hull:app";
-import * as paths from "./lib/paths.js";
-import * as api from "./lib/api.js";
-import * as key from "./commands/key.js";
-import * as config from "./commands/config.js";
+import * as paths from "./lib/paths.ts";
+import * as api from "./lib/api.ts";
+import * as key from "./commands/key.ts";
+import * as config from "./commands/config.ts";
+import type { CommandFn } from "./lib/types.ts";
 
 const GENERATED = Object.values(config.FILES).flat().map((f) => `@state/${f}`);
 
@@ -25,16 +26,16 @@ app.manifest({
     },
 });
 
-const VERSION = "0.1.4";
+const VERSION = "0.1.5";
 
-const COMMANDS = {
+const COMMANDS: Record<string, { fn: CommandFn; help: string }> = {
     login: { fn: key.login, help: "Store your API key, read from stdin, once the API accepts it" },
     status: { fn: key.status, help: "Your key's tier, limits, expiry and today's use" },
     config: { fn: config.config, help: "Generate a harness's configuration (pi, opencode, aider) and print it" },
     "shell-init": { fn: config.shellInit, help: "Shell functions hs-pi, hs-opencode, hs-aider: eval \"$(hscli shell-init)\"" },
 };
 
-function usage(out) {
+function usage(out: Hull.MainOutput): void {
     out.write("usage: hscli <command> [args]\n\ncommands:\n");
     for (const [name, c] of Object.entries(COMMANDS)) out.write(`  ${name.padEnd(11)} ${c.help}\n`);
     out.write(`\nThe API: https://$HSCLI_API_HOST/v1. State (api-key, harness files): ${paths.stateDir()}\n`);
