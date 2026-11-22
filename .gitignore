@@ -4,3 +4,5 @@
 # from the hull that builds.
 /types/
 /node_modules/
+# The pinned Hull, fetched by `make toolchain` / build.sh.
+/toolchain/
