@@ -322,8 +322,9 @@ built binary runs). CI runs both on macOS and Linux; a tag `vX.Y.Z`
 matching `VERSION` in `app.ts` publishes a release
 (`.github/workflows/release.yml`).
 
-[`configs/pi/setup.sh`](configs/pi/) is the older Pi-only setup, for a
-machine without hscli.
+Without hscli, any tool that speaks OpenAI's chat completions works: point
+it at `https://<the host you were sent>/v1` with your key, streaming on and
+`max_tokens` set (see *Use the API from your own code*).
 
 The operator gets a key the same way: `hsctl gateway key client | hscli login --stdin`.
 
