@@ -1,5 +1,6 @@
 // hscli config HARNESS: the harness's files, generated in hscli's state
-// directory from what the API says the key may do, and printed. The user's
+// directory (configs/HARNESS/) from what the API says the key may do, and
+// printed. The user's
 // own harness configuration is never touched, and no
 // generated file holds the key: each reads it from the key file.
 //
@@ -21,6 +22,11 @@ export const FILES: Record<Harness, string[]> = {
     opencode: ["opencode.json"],
     aider: ["aider-models.json", "aider-settings.yml"],
 };
+
+// Where a harness's file lives in the state directory: configs/HARNESS/.
+export function statePath(harness: Harness, name: string): string {
+    return `configs/${harness}/${name}`;
+}
 
 // Each model the key may use, with what a harness must be told.
 function models(d: Description): ModelSpec[] {
@@ -98,22 +104,24 @@ export async function config(ctx: Ctx, args: string[]): Promise<number> {
     if (w) ctx.stderr.write(w + "\n");     // also with --quiet: hs-pi and the others show it at start
     const files = generate(harness, d, api.baseUrl(ctx.env), paths.real("api-key"));
     for (const [name, text] of Object.entries(files)) {
-        fs.write(`@state/${name}`, text);
-        if (!quiet) ctx.stdout.write(`# ${paths.real(name)}\n${text}`);
+        const rel = statePath(harness, name);
+        fs.write(`@state/${rel}`, text);
+        if (!quiet) ctx.stdout.write(`# ${paths.real(rel)}\n${text}`);
     }
     return 0;
 }
 
 export function shellInit(ctx: Ctx, args: string[]): number {
     if (args.length) { ctx.stderr.write("usage: eval \"$(hscli shell-init)\"\n"); return 2; }
-    const p = (f: string) => paths.shq(paths.real(f));
+    const p = (h: Harness, f: string) => paths.shq(paths.real(statePath(h, f)));
+    const key = paths.shq(paths.real("api-key"));
     const model = "qwen3_8-flash-next-fp4-local";
     ctx.stdout.write(`# hscli shell-init: start a harness with the Herding Sparks API.
 # Each function regenerates the harness's files from the key's own limits.
-hs-pi() { hscli config pi --quiet && pi -e ${p("pi-herding-sparks.js")} --model herding-sparks/${model} "$@"; }
-hs-opencode() { hscli config opencode --quiet && OPENCODE_CONFIG=${p("opencode.json")} opencode "$@"; }
-hs-aider() { hscli config aider --quiet && OPENAI_API_BASE="https://$HSCLI_API_HOST/v1" OPENAI_API_KEY="$(cat ${p("api-key")})" \\
-    aider --model openai/${model} --model-metadata-file ${p("aider-models.json")} --model-settings-file ${p("aider-settings.yml")} "$@"; }
+hs-pi() { hscli config pi --quiet && pi -e ${p("pi", "pi-herding-sparks.js")} --model herding-sparks/${model} "$@"; }
+hs-opencode() { hscli config opencode --quiet && OPENCODE_CONFIG=${p("opencode", "opencode.json")} opencode "$@"; }
+hs-aider() { hscli config aider --quiet && OPENAI_API_BASE="https://$HSCLI_API_HOST/v1" OPENAI_API_KEY="$(cat ${key})" \\
+    aider --model openai/${model} --model-metadata-file ${p("aider", "aider-models.json")} --model-settings-file ${p("aider", "aider-settings.yml")} "$@"; }
 `);
     return 0;
 }

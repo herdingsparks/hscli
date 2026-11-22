@@ -5,15 +5,17 @@
 // API, at https://$HSCLI_API_HOST/v1: the host is never built in (README.md).
 // Its state directory (Hull's @state/: $XDG_STATE_HOME/hscli, else
 // ~/.local/state/hscli, or $HULL_STATE_DIR) holds the key (mode 600) and the
-// generated harness files.
+// generated harness files, under configs/<harness>/.
 import { app } from "hull:app";
 import * as paths from "./lib/paths.ts";
 import * as api from "./lib/api.ts";
 import * as key from "./commands/key.ts";
 import * as config from "./commands/config.ts";
+import { tryIt } from "./commands/try.ts";
 import type { CommandFn } from "./lib/types.ts";
 
-const GENERATED = Object.values(config.FILES).flat().map((f) => `@state/${f}`);
+const GENERATED = (Object.keys(config.FILES) as config.Harness[])
+    .flatMap((h) => config.FILES[h].map((f) => `@state/${config.statePath(h, f)}`));
 
 app.manifest({
     modules: ["hull/http-client@1", "hull/fs@1", "hull/encoding@1"],
@@ -26,11 +28,12 @@ app.manifest({
     },
 });
 
-const VERSION = "0.1.5";
+const VERSION = "0.1.6";
 
 const COMMANDS: Record<string, { fn: CommandFn; help: string }> = {
     login: { fn: key.login, help: "Store your API key, read from stdin, once the API accepts it" },
     status: { fn: key.status, help: "Your key's tier, limits, expiry and today's use" },
+    try: { fn: tryIt, help: "Ask the model one question, to see that everything works: hscli try [PROMPT]" },
     config: { fn: config.config, help: "Generate a harness's configuration (pi, opencode, aider) and print it" },
     "shell-init": { fn: config.shellInit, help: "Shell functions hs-pi, hs-opencode, hs-aider: eval \"$(hscli shell-init)\"" },
 };
