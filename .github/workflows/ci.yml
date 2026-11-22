@@ -15,10 +15,14 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
       - uses: ./.github/actions/hull
-      - name: Build
-        run: hull build -o hscli .
-      - name: Unit
-        run: bash tests/unit.sh
+      # hull check --types (the TypeScript compiler pinned in package-lock.json,
+      # the manifest, imports and hull test), then hull build.
+      - name: Check and build
+        run: make
       - name: Smoke
         run: sh tests/smoke.sh ./hscli

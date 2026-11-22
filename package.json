@@ -1,0 +1,8 @@
+{
+  "name": "hscli",
+  "private": true,
+  "description": "Pins the TypeScript compiler that type-checks hscli (hull check --types). Hull erases the types; nothing here is bundled.",
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}

@@ -1,5 +1,5 @@
 name: Release
-# A tag vX.Y.Z whose version app.js also says builds hscli on each platform,
+# A tag vX.Y.Z whose version app.ts also says builds hscli on each platform,
 # smoke-tests it there, and publishes the archives with SHA256SUMS.
 on:
   push:
@@ -19,16 +19,18 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: The tag is app.js's version
+      - name: The tag is app.ts's version
         run: |
-          v=$(sed -n 's/^const VERSION = "\(.*\)";$/\1/p' app.js)
-          [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME, app.js says $v"; exit 1; }
+          v=$(sed -n 's/^const VERSION = "\(.*\)";$/\1/p' app.ts)
+          [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME, app.ts says $v"; exit 1; }
           echo "VERSION=$v" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
       - uses: ./.github/actions/hull
-      - name: Build
-        run: hull build -o hscli .
-      - name: Unit
-        run: bash tests/unit.sh
+      - name: Check and build
+        run: make
       - name: Smoke
         run: sh tests/smoke.sh ./hscli "$VERSION"
       - name: What it links against

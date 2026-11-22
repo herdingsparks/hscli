@@ -1,9 +1,10 @@
 // hscli login: store the key, after the API accepts it. hscli status: what
 // the key may do and has done today, from the API (GET /v1/hs/key).
 import { fs } from "hull:fs";
-import * as api from "../lib/api.js";
+import * as api from "../lib/api.ts";
+import type { Ctx } from "../lib/types.ts";
 
-export async function login(ctx, args) {
+export async function login(ctx: Ctx, args: string[]): Promise<number> {
     if (args.length > 1 || (args.length === 1 && args[0] !== "--stdin")) {
         ctx.stderr.write("usage: hscli login [--stdin]   (paste the key at the prompt, or pipe it)\n");
         return 2;
@@ -20,12 +21,12 @@ export async function login(ctx, args) {
     return 0;
 }
 
-function n(x) {
+function n(x: number | string | null | undefined): string {
     if (x === undefined || x === null) return "-";
     return String(Math.trunc(Number(x))).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-export async function status(ctx, args) {
+export async function status(ctx: Ctx, args: string[]): Promise<number> {
     const json = args.includes("--json");
     if (args.some((a) => a !== "--json")) { ctx.stderr.write("usage: hscli status [--json]\n"); return 2; }
     api.host(ctx.env);
