@@ -3,7 +3,7 @@ description: Hull, pinned, from gethull.dev
 inputs:
   version:
     description: Hull release
-    default: v0.23.1
+    default: v0.23.3
 runs:
   using: composite
   steps:
