@@ -2,8 +2,8 @@ name: Install Hull
 description: Hull, pinned, from gethull.dev
 inputs:
   version:
-    description: Hull release
-    default: v0.23.3
+    description: Hull release (default the HULL_VERSION file's)
+    default: ""
 runs:
   using: composite
   steps:
@@ -13,6 +13,7 @@ runs:
       env:
         HULL_VERSION: ${{ inputs.version }}
       run: |
+        HULL_VERSION=${HULL_VERSION:-$(cat HULL_VERSION)}; export HULL_VERSION
         for i in 1 2 3 4 5 6; do
           curl -fsSL --retry 5 --retry-all-errors https://gethull.dev/install.sh -o "$RUNNER_TEMP/install.sh" \
             && sh "$RUNNER_TEMP/install.sh" && break

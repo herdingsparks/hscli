@@ -249,15 +249,42 @@ rm -rf ~/.local/state/hscli      # your key and the generated settings (configs/
 
 Then delete the two lines from `~/.zshrc` or `~/.bashrc`.
 
+## Build from source
+
+hscli is TypeScript (`app.ts`) on [Hull](https://gethull.dev), which erases
+the types and builds one self-contained binary. From a clone, with nothing
+else installed but `make`, `curl` and, for the type check, Node.js 20 or
+later with npm:
+
+```sh
+git clone https://github.com/herdingsparks/hscli && cd hscli
+./build.sh                       # the type check, then ./hscli
+./build.sh --no-types            # the build alone, without Node.js
+```
+
+`build.sh` fetches the Hull release this repository pins (the
+`HULL_VERSION` file, which CI builds with too) into `toolchain/`, checked
+by gethull.dev's installer against the release's SHA-256 manifest, then
+runs `make` with it: Hull's gate, `hull check --types .` (the TypeScript
+compiler pinned in `package-lock.json`, the manifest, the imports and
+`hull test`), then `hull build -o hscli .`. It installs nothing outside the
+clone; Hull keeps its caches in `~/.hull`. Put the resulting `./hscli` on
+your PATH. The same steps as make targets:
+
+| Command | What it does |
+| --- | --- |
+| `make from-source` | fetch the pinned Hull, then the type check and the build |
+| `make from-source-no-types` | fetch the pinned Hull, then the build alone |
+| `make toolchain` | fetch the pinned Hull into `toolchain/` (again only when `HULL_VERSION` changes) |
+| `make` / `make check` | the build / the type check alone, with the `hull` on your PATH (`make HULL=/path/to/hull` for another) |
+
+Hull ships for macOS on Apple silicon and Linux on x86_64 and arm64, so
+hscli builds there.
+
 ## Reference
 
 `HSCLI_VERSION=0.1.0` makes `install.sh` install that release, and
-`HSCLI_BIN_DIR` installs to another directory. Or build hscli with
-[Hull](https://gethull.dev) 0.23.3 or later: `make`, then put `hscli` on
-your PATH. hscli is TypeScript (`app.ts`), which Hull runs with the types
-erased; `make` first runs Hull's gate, `hull check --types .`, which needs
-Node.js and npm for the TypeScript compiler pinned in `package.json`.
-`hull build -o hscli .` alone builds without the check.
+`HSCLI_BIN_DIR` installs to another directory.
 
 | Command | What it does |
 | --- | --- |
