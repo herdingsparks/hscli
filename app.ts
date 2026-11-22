@@ -26,7 +26,7 @@ app.manifest({
     },
 });
 
-const VERSION = "0.1.4";
+const VERSION = "0.1.5";
 
 const COMMANDS: Record<string, { fn: CommandFn; help: string }> = {
     login: { fn: key.login, help: "Store your API key, read from stdin, once the API accepts it" },
