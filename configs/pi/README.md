@@ -2,7 +2,7 @@
 
 [Pi](https://pi.dev) is a terminal coding agent. These steps point it at
 the Herding Sparks API (model `qwen3_8-flash-next-fp4-local`), for a machine without
-[hscli](../README.md), which does this for you (`hs-pi`). Tested with Pi
+[hscli](../../README.md), which does this for you (`hs-pi`). Tested with Pi
 0.73.1 on 2026-11-17.
 
 ## Setup

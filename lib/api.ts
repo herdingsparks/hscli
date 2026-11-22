@@ -35,25 +35,37 @@ export function readKey(): string {
     return k;
 }
 
-// A GET's status and its JSON body, or null if the body is not JSON.
-export interface Reply { status: number; doc: unknown }
+// A reply: its status, headers (lowercased names), raw body, and the body as
+// JSON, or null if it is not JSON.
+export interface Reply { status: number; headers: Record<string, string>; body: string; doc: unknown }
 
 // GET a path under /v1 with the key.
-export async function get(env: Env, path: string, key: string): Promise<Reply> {
+export function get(env: Env, path: string, key: string): Promise<Reply> {
+    return send(env, "GET", path, key);
+}
+
+// POST a JSON document to a path under /v1 with the key. `timeoutMs` bounds
+// the whole request (Hull's default is 30 s).
+export function post(env: Env, path: string, key: string, doc: unknown, timeoutMs?: number): Promise<Reply> {
+    return send(env, "POST", path, key, JSON.stringify(doc), timeoutMs);
+}
+
+async function send(env: Env, method: string, path: string, key: string, body?: string, timeoutMs?: number): Promise<Reply> {
     const url = `${baseUrl(env)}${path}`;
+    const headers: Record<string, string> = { Authorization: `Bearer ${key}`, Accept: "application/json" };
+    if (body !== undefined) headers["Content-Type"] = "application/json";
     let r: HttpResponse;
     try {
-        r = await httpClient.async.get(url, { headers: { Authorization: `Bearer ${key}`, Accept: "application/json" } });
+        r = await httpClient.async.request(method, url, { headers, body, ...(timeoutMs ? { timeoutMs } : {}) });
     } catch (e) {
         const x = e as { code?: string; host?: string; message?: string } | undefined;
         if (x?.code === "denied") throw new HscliError(`hscli may not connect to ${x.host ?? url}: only the host in HSCLI_API_HOST is allowed`, 2);
         throw new HscliError(`cannot reach ${url}: ${String(x?.message ?? e)}`);
     }
+    const text = typeof r.body === "string" ? r.body : encoding.utf8.decode(encoding.bytes.toU8(r.body)) ?? "";
     let doc: unknown = null;
-    try {
-        doc = JSON.parse(typeof r.body === "string" ? r.body : encoding.utf8.decode(encoding.bytes.toU8(r.body)) ?? "");
-    } catch (_e) { doc = null; }
-    return { status: r.status, doc };
+    try { doc = JSON.parse(text); } catch (_e) { doc = null; }
+    return { status: r.status, headers: r.headers ?? {}, body: text, doc };
 }
 
 // A warning when the key expires within WARN_DAYS, or null. The gateway gives

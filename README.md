@@ -67,7 +67,15 @@ hscli status
 
 This shows your key's tier and expiry, the model and its limits (prompt,
 output, streams), and how many of today's tokens you have used. A refused
-key says why (see *When something goes wrong* below).
+key says why (see *When something goes wrong* below). Then ask the model
+something:
+
+```sh
+hscli try                        # or: hscli try "what is 17 times 23?"
+```
+
+It prints the answer, then which node answered, the token counts and how
+long it took. `--thinking` also shows the model's thinking.
 
 **5. Add the harness commands.** Add this line to `~/.zshrc` or `~/.bashrc`,
 after the `export`:
@@ -117,6 +125,79 @@ is. Any arguments go to the harness, so `hs-pi --help` shows Pi's.
 - **Maintenance** moves you to the other node; requests already running
   finish first.
 
+## Use the API from your own code
+
+Any OpenAI SDK works, pointed at `https://<the host you were sent>/v1` with
+your key. Two things differ from OpenAI's defaults, and the API refuses a
+request without them: **`stream` must be true**, and **`max_tokens`** (or
+`max_completion_tokens`) **must be set**, at most your tier's output limit
+(`hscli status`). The model's id is `qwen3_8-flash-next-fp4-local`.
+
+Python (`pip install openai`):
+
+```python
+import os
+from openai import OpenAI
+
+key = open(os.path.expanduser("~/.local/state/hscli/api-key")).read().strip()
+client = OpenAI(base_url=f"https://{os.environ['HSCLI_API_HOST']}/v1", api_key=key)
+stream = client.chat.completions.create(
+    model="qwen3_8-flash-next-fp4-local",
+    messages=[{"role": "user", "content": "Write a haiku about sparks."}],
+    max_tokens=2048,
+    stream=True,
+)
+for chunk in stream:
+    if chunk.choices and chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="", flush=True)
+print()
+```
+
+TypeScript (`npm install openai`):
+
+```ts
+import OpenAI from "openai";
+import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+
+const apiKey = readFileSync(`${homedir()}/.local/state/hscli/api-key`, "utf8").trim();
+const client = new OpenAI({ baseURL: `https://${process.env.HSCLI_API_HOST}/v1`, apiKey });
+const stream = await client.chat.completions.create({
+  model: "qwen3_8-flash-next-fp4-local",
+  messages: [{ role: "user", content: "Write a haiku about sparks." }],
+  max_tokens: 2048,
+  stream: true,
+});
+for await (const chunk of stream) process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
+process.stdout.write("\n");
+```
+
+curl:
+
+```sh
+curl -N "https://$HSCLI_API_HOST/v1/chat/completions" \
+  -H "Authorization: Bearer $(cat ~/.local/state/hscli/api-key)" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "qwen3_8-flash-next-fp4-local", "stream": true, "max_tokens": 2048,
+       "messages": [{"role": "user", "content": "Write a haiku about sparks."}]}'
+```
+
+Good to know:
+
+- **The model thinks before it answers.** Its thinking arrives in each
+  chunk's `delta.reasoning_content`, apart from the answer in
+  `delta.content`, and counts toward `max_tokens`: give it room (2,048 is a
+  good start), or a hard question can use them all before the answer. The
+  answer often starts with a blank line.
+- **Streams may carry comment lines** (`: queued`, `: keepalive`) while your
+  request waits or the model reads a long prompt. SDKs skip them.
+- `stream_options: {"include_usage": true}` adds a last chunk with the
+  token counts.
+- Endpoints: `POST /v1/chat/completions`, `GET /v1/models` and
+  `GET /v1/hs/key`. There are no embeddings or Responses API, and no
+  Anthropic API, so tools that need one (Claude Code, for example) cannot
+  use it.
+
 ## When something goes wrong
 
 hscli and the harnesses show the API's error code. The usual ones:
@@ -137,6 +218,10 @@ hscli and the harnesses show the API's error code. The usual ones:
 **If your key may have leaked** (pasted somewhere, a laptop lost), tell
 the operator at once. They revoke it and send you a new one.
 
+**Getting help.** Write to the person who sent you your key, with what you
+ran, the error code and the time (UTC). The API is watched from outside
+every minute, and the operator is alerted when it stops answering.
+
 ## Updating
 
 hscli doesn't update itself. To get the latest release, run the installer
@@ -150,11 +235,16 @@ hscli --version
 The [releases](https://github.com/herdingsparks/hscli/releases) page says
 what changed.
 
+From 0.1.6 the generated harness files live in `configs/<harness>/` in the
+state directory. Files an earlier hscli wrote at its top
+(`pi-herding-sparks.js`, `opencode.json`, `aider-models.json`,
+`aider-settings.yml`) are no longer used and can be deleted.
+
 ## Removing hscli
 
 ```sh
 rm ~/.local/bin/hscli
-rm -rf ~/.local/state/hscli      # your key and the generated settings
+rm -rf ~/.local/state/hscli      # your key and the generated settings (configs/)
 ```
 
 Then delete the two lines from `~/.zshrc` or `~/.bashrc`.
@@ -173,11 +263,12 @@ Node.js and npm for the TypeScript compiler pinned in `package.json`.
 | --- | --- |
 | `hscli login [--stdin]` | reads the key from stdin, checks it with the API (`/v1/hs/key`), stores it in the state directory, mode 600 |
 | `hscli status [--json]` | the key's tier, expiry, limits, and today's use per node and in total |
-| `hscli config pi\|opencode\|aider` | generates that harness's files in the state directory from what the API says the key may do, and prints them |
+| `hscli try [--thinking] [--max-tokens N] [PROMPT]` | asks the model one question and prints the answer, then the node, token counts and time |
+| `hscli config pi\|opencode\|aider` | generates that harness's files in the state directory (`configs/<harness>/`) from what the API says the key may do, and prints them |
 | `hscli shell-init` | prints the shell functions `hs-pi`, `hs-opencode`, `hs-aider` |
 
 Each function regenerates its harness's files and starts it pointed at
-them: Pi with `-e <state>/pi-herding-sparks.js` (a Pi extension that
+them: Pi with `-e <state>/configs/pi/pi-herding-sparks.js` (a Pi extension that
 registers the provider), OpenCode with `OPENCODE_CONFIG`, Aider with
 `--model-metadata-file` and `--model-settings-file` (the API requires
 `max_tokens`, which Aider doesn't send unless told). Your own harness
@@ -204,8 +295,8 @@ built binary runs). CI runs both on macOS and Linux; a tag `vX.Y.Z`
 matching `VERSION` in `app.ts` publishes a release
 (`.github/workflows/release.yml`).
 
-[`pi/setup.sh`](pi/) is the older Pi-only setup, for a machine without
-hscli.
+[`configs/pi/setup.sh`](configs/pi/) is the older Pi-only setup, for a
+machine without hscli.
 
 The operator gets a key the same way: `hsctl gateway key client | hscli login --stdin`.
 
