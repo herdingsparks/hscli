@@ -4,7 +4,7 @@
 // checked here first, so the message says what to set; a refusal Hull still
 // gives (code "denied") is named as one.
 import { httpClient } from "hull:http-client";
-import type { HttpResponse } from "hull:http-client";
+import type { HttpResponse, HttpStream } from "hull:http-client";
 import { fs } from "hull:fs";
 import { encoding } from "hull:encoding";
 import type { ApiErrorBody, Description, Env, KeyReport, Model } from "./types.ts";
@@ -50,6 +50,45 @@ export function post(env: Env, path: string, key: string, doc: unknown, timeoutM
     return send(env, "POST", path, key, JSON.stringify(doc), timeoutMs);
 }
 
+// POST a JSON document and hand back the reply as it arrives: its status and
+// headers once they come, the body read from the stream. `timeoutMs` bounds
+// the wait for the headers and the whole stream's life alike.
+export async function postStream(env: Env, path: string, key: string, doc: unknown, timeoutMs: number): Promise<HttpStream> {
+    const url = `${baseUrl(env)}${path}`;
+    const headers: Record<string, string> = {
+        Authorization: `Bearer ${key}`, Accept: "text/event-stream", "Content-Type": "application/json",
+    };
+    try {
+        return await httpClient.async.stream("POST", url, { headers, body: JSON.stringify(doc), timeoutMs, lifeMs: timeoutMs });
+    } catch (e) {
+        throw reachError(url, e);
+    }
+}
+
+// Read a stream's whole body as text (an error reply is short).
+export async function readAll(s: HttpStream): Promise<Reply> {
+    const parts: string[] = [];
+    try {
+        for (;;) {
+            const t = await s.readText();
+            if (t === null) break;
+            parts.push(t);
+        }
+    } finally {
+        s.close();
+    }
+    const text = parts.join("");
+    let doc: unknown = null;
+    try { doc = JSON.parse(text); } catch (_e) { doc = null; }
+    return { status: s.status, headers: s.headers ?? {}, body: text, doc };
+}
+
+function reachError(url: string, e: unknown): HscliError {
+    const x = e as { code?: string; host?: string; message?: string } | undefined;
+    if (x?.code === "denied") return new HscliError(`hscli may not connect to ${x.host ?? url}: only the host in HSCLI_API_HOST is allowed`, 2);
+    return new HscliError(`cannot reach ${url}: ${String(x?.message ?? e)}`);
+}
+
 async function send(env: Env, method: string, path: string, key: string, body?: string, timeoutMs?: number): Promise<Reply> {
     const url = `${baseUrl(env)}${path}`;
     const headers: Record<string, string> = { Authorization: `Bearer ${key}`, Accept: "application/json" };
@@ -58,9 +97,7 @@ async function send(env: Env, method: string, path: string, key: string, body?: 
     try {
         r = await httpClient.async.request(method, url, { headers, body, ...(timeoutMs ? { timeoutMs } : {}) });
     } catch (e) {
-        const x = e as { code?: string; host?: string; message?: string } | undefined;
-        if (x?.code === "denied") throw new HscliError(`hscli may not connect to ${x.host ?? url}: only the host in HSCLI_API_HOST is allowed`, 2);
-        throw new HscliError(`cannot reach ${url}: ${String(x?.message ?? e)}`);
+        throw reachError(url, e);
     }
     const text = typeof r.body === "string" ? r.body : encoding.utf8.decode(encoding.bytes.toU8(r.body)) ?? "";
     let doc: unknown = null;

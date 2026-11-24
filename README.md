@@ -74,8 +74,8 @@ something:
 hscli try                        # or: hscli try "what is 17 times 23?"
 ```
 
-It prints the answer, then which node answered, the token counts and how
-long it took. `--thinking` also shows the model's thinking.
+It prints the answer as it arrives, then which node answered, the token
+counts and how long it took. `--thinking` also shows the model's thinking.
 
 **5. Add the harness commands.** Add this line to `~/.zshrc` or `~/.bashrc`,
 after the `export`:
@@ -290,7 +290,7 @@ hscli builds there.
 | --- | --- |
 | `hscli login [--stdin]` | reads the key from stdin, checks it with the API (`/v1/hs/key`), stores it in the state directory, mode 600 |
 | `hscli status [--json]` | the key's tier, expiry, limits, and today's use per node and in total |
-| `hscli try [--thinking] [--max-tokens N] [PROMPT]` | asks the model one question and prints the answer, then the node, token counts and time |
+| `hscli try [--thinking] [--max-tokens N] [PROMPT]` | asks the model one question and prints the answer as it arrives, then the node, token counts and time |
 | `hscli config pi\|opencode\|aider` | generates that harness's files in the state directory (`configs/<harness>/`) from what the API says the key may do, and prints them |
 | `hscli shell-init` | prints the shell functions `hs-pi`, `hs-opencode`, `hs-aider` |
 
