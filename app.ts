@@ -18,9 +18,7 @@ const GENERATED = (Object.keys(config.FILES) as config.Harness[])
     .flatMap((h) => config.FILES[h].map((f) => `@state/${config.statePath(h, f)}`));
 
 app.manifest({
-    // hull/sse-client is cast: Hull v0.24.0's declarations leave it out of
-    // the module names a manifest may declare (fixed in Hull's next release).
-    modules: ["hull/http-client@1", "hull/sse-client@1" as string as Hull.ModuleSpec, "hull/fs@1", "hull/encoding@1"],
+    modules: ["hull/http-client@1", "hull/sse-client@1", "hull/fs@1", "hull/encoding@1"],
     env: ["HSCLI_API_HOST", "HULL_STATE_DIR", "XDG_STATE_HOME", "HOME"],
     hosts: ["$HSCLI_API_HOST"],
     state: { name: "hscli" },
