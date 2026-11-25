@@ -2,7 +2,7 @@
 
 What you can rely on when you use the API with a key issued to you: what it
 serves, the limits of your key, what the errors mean, how fast it is, how
-it is maintained, and how your data is handled. Version 3, 2026-11-18. The
+it is maintained, and how your data is handled. Version 4, 2026-11-25. The
 operator keeps the authoritative copy; this one is kept in step with it.
 Where it says "the host you were sent", that is the API host name that came
 with your key (`HSCLI_API_HOST` for hscli).
@@ -37,7 +37,7 @@ with your key (`HSCLI_API_HOST` for hscli).
 | Prompt | at most 131,072 tokens | `400 prompt_too_long`, naming the count and the limit |
 | `n`, `best_of` | 1 or absent | `400 unsupported_n` |
 | Request body | 4 MiB | `413 body_too_large` |
-| Tokens per day | 20,000,000: 10,000,000 per node; resets at 00:00 UTC | `429 quota_exceeded`, with `Retry-After` the seconds to midnight UTC |
+| Tokens per day | 80,000,000: 40,000,000 per node; resets at 00:00 UTC | `429 quota_exceeded`, with `Retry-After` the seconds to midnight UTC |
 | Key expiry | 90 days from issue | `401 key_expired` after it |
 
 A key is renewed by issuing a new one before the old one expires; the
