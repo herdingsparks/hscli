@@ -210,8 +210,10 @@ hscli and the harnesses show the API's error code. The usual ones:
 | `403 fleet_only` | the request went to a node directly, not to the host you were sent | use the host you were sent, and only that host |
 | `429 quota_exceeded` | today's tokens are used up | wait until 00:00 UTC (`Retry-After` gives the seconds) |
 | `429 queue_full`, `queue_timeout` | more requests at once than your tier allows | retry; run fewer things in parallel |
+| `429 too_many_pending` | more requests are still being sent or checked than your streams and queue allow (6 per node) | retry after `Retry-After`; run fewer things in parallel |
 | `400 prompt_too_long` | the conversation is over the prompt limit | Pi compacts by itself; with another tool, start a new session |
 | `400 max_tokens_required` | the tool didn't say how long an answer may be | use the `hs-` commands, which set it |
+| `502 upstream_stalled` | the model sent nothing for 15 minutes, so the answer was ended | retry; it counts its prompt and the output you received |
 | `503 draining` | maintenance on that node | retry in a moment |
 | `cannot reach https://...` | no network, or the host is mistyped | check `HSCLI_API_HOST` and your connection |
 
