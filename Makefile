@@ -12,6 +12,7 @@
 # pinned in package.json) over tsconfig.json and tests/tsconfig.json, then
 # validates the manifest and imports, runs `hull test` (tests/test_*.ts), and
 # runs `hull verify`, which skips an unsigned app.
+# Then a loopback-only streaming CLI test covers completion and interruption.
 
 HULL ?= hull
 TSC  := node_modules/.bin/tsc
@@ -27,6 +28,7 @@ hscli: check
 
 check: types $(TSC)
 	$(HULL) check --types .
+	node tests/stream.mjs "$(HULL)"
 
 # The declarations match the hull that builds: regenerated from it each time
 # (types/ is not committed). `-o` keeps hull types from writing tsconfig files

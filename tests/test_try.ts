@@ -1,7 +1,8 @@
 // hull test: hscli try reads the streamed reply as the API sends it:
 // server-sent events with keepalive comments, the thinking apart from the
 // answer, and the usage chunk at the end.
-import { Trimmed, applyChunk, newStreamed, parseStream } from "../commands/try.ts";
+import { Trimmed, applyChunk, newStreamed, parseStream, readStream } from "../commands/try.ts";
+import type { HttpStream } from "hull:http-client";
 
 const ev = (o: unknown) => `data: ${JSON.stringify(o)}\n\n`;
 
@@ -21,6 +22,82 @@ test("try: the answer, the thinking and the usage, keepalives skipped", () => {
     test.eq(s.model, "m");
     test.eq(s.promptTokens, 20);
     test.eq(s.completionTokens, 9);
+    test.eq(s.done, true);
+});
+
+function stream(chunks: string[], failAtEnd = false) {
+    let reads = 0, closed = false;
+    const res = {
+        async readText() {
+            const i = reads++;
+            if (i < chunks.length) return chunks[i]!;
+            if (failAtEnd) throw new Error("synthetic transport failure");
+            return null;
+        },
+        close() { closed = true; },
+    } as unknown as HttpStream;
+    return { res, reads: () => reads, closed: () => closed };
+}
+
+async function failure(run: () => Promise<void>): Promise<string> {
+    try { await run(); } catch (e) { return (e as Error).message; }
+    throw new Error("expected rejection");
+}
+
+test("try: partial content followed by clean EOF is not a successful reply", async () => {
+    const f = stream([ev({ choices: [{ delta: { content: "par" } }] })]);
+    const s = newStreamed();
+    test.eq(await failure(() => readStream(f.res, s, () => {})), "stream ended before completion");
+    test.eq(s.content, "par");
+    test.eq(f.closed(), true);
+});
+
+test("try: DONE ends reading immediately and ignores later events", async () => {
+    const f = stream([ev({ choices: [{ delta: { content: "ok" } }] })
+        + "data: [DONE]\n\n" + ev({ error: { code: "late" } })], true);
+    const s = newStreamed();
+    await readStream(f.res, s, () => {});
+    test.eq(s.done, true);
+    test.eq(s.error, null);
+    test.eq(s.content, "ok");
+    test.eq(f.reads(), 1);
+    test.eq(f.closed(), true);
+    test.eq(parseStream("data: [DONE]\n\n" + ev({ choices: [{ delta: { content: "late" } }] })).content, "");
+});
+
+test("try: finish plus EOF is complete and trailing usage is retained", async () => {
+    const f = stream([ev({ choices: [{ delta: { content: "ok" }, finish_reason: "stop" }] }),
+        ev({ usage: { prompt_tokens: 3, completion_tokens: 2 } })]);
+    const s = newStreamed();
+    let printed = "";
+    await readStream(f.res, s, added => {
+        if (added.content) test.eq(f.reads(), 1);
+        printed += added.content;
+    });
+    test.eq(printed, "ok");
+    test.eq(s.finish, "stop");
+    test.eq(s.completionTokens, 2);
+    test.eq(f.closed(), true);
+});
+
+test("try: provider error closes without waiting for EOF", async () => {
+    const f = stream([ev({ error: { code: "node_lost", message: "gone" } })], true);
+    const s = newStreamed();
+    await readStream(f.res, s, () => {});
+    test.eq(s.error, "node_lost: gone");
+    test.eq(f.reads(), 1);
+    test.eq(f.closed(), true);
+});
+
+test("try: transport and output errors retain their cause and close the stream", async () => {
+    for (const outputFails of [false, true]) {
+        const f = stream([ev({ choices: [{ delta: { content: "par" } }] })], true);
+        const message = await failure(() => readStream(f.res, newStreamed(), () => {
+            if (outputFails) throw new Error("synthetic output failure");
+        }));
+        test.eq(message, outputFails ? "synthetic output failure" : "synthetic transport failure");
+        test.eq(f.closed(), true);
+    }
 });
 
 test("try: a reply cut off while thinking has no answer and finish length", () => {

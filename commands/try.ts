@@ -4,6 +4,7 @@
 // stdout as it arrives (the thinking, with --thinking, to stderr); the
 // timing, the token counts and the node that answered go to stderr.
 import { sseClient } from "hull:sse-client";
+import type { HttpStream } from "hull:http-client";
 import * as api from "../lib/api.ts";
 import type { Ctx } from "../lib/types.ts";
 
@@ -22,6 +23,7 @@ export interface Streamed {
     promptTokens: number | null;
     completionTokens: number | null;
     error: string | null;
+    done: boolean;
 }
 
 interface Chunk {
@@ -33,15 +35,16 @@ interface Chunk {
 }
 
 export function newStreamed(): Streamed {
-    return { content: "", reasoning: "", finish: null, model: null, promptTokens: null, completionTokens: null, error: null };
+    return { content: "", reasoning: "", finish: null, model: null, promptTokens: null, completionTokens: null, error: null, done: false };
 }
 
-// Take one event's data (a JSON chunk; "[DONE]" and anything unreadable are
-// skipped) into `out`; returns the text it added, the answer and the thinking.
+// Take one event's data into `out`; unreadable chunks are skipped and [DONE]
+// marks completion. Returns the answer and thinking text it added.
 export function applyChunk(out: Streamed, data: string): { content: string; reasoning: string } {
     const added = { content: "", reasoning: "" };
     const d = data.trim();
-    if (d === "" || d === "[DONE]") return added;
+    if (out.done || out.error !== null || d === "") return added;
+    if (d === "[DONE]") { out.done = true; return added; }
     let c: Chunk;
     try { c = JSON.parse(d) as Chunk; } catch (_e) { return added; }
     if (c === null || typeof c !== "object") return added;
@@ -70,6 +73,23 @@ export function parseStream(body: string): Streamed {
     const p = sseClient.parser();
     for (const ev of [...p.feed(body), ...p.finish()]) applyChunk(out, ev.data);
     return out;
+}
+
+// A finish reason followed by EOF also completes generation. Keep reading after
+// that reason for the optional usage chunk, but stop immediately on [DONE].
+// Own cleanup even if parsing or the output callback throws.
+export async function readStream(res: HttpStream, out: Streamed,
+    onText: (added: { content: string; reasoning: string }) => void): Promise<void> {
+    try {
+        for await (const ev of sseClient.events(res)) {
+            onText(applyChunk(out, ev.data));
+            if (out.done || out.error !== null) break;
+        }
+        if (!out.done && out.finish === null && out.error === null)
+            throw new Error("stream ended before completion");
+    } finally {
+        res.close();
+    }
 }
 
 // Writes streamed text as it arrives, as the whole text trimmed would read:
@@ -145,14 +165,13 @@ export async function tryIt(ctx: Ctx, args: string[]): Promise<number> {
     const answer = new Trimmed(ctx.stdout);
     let cut: string | null = null;
     try {
-        for await (const ev of sseClient.events(res)) {
-            const added = applyChunk(s, ev.data);
+        await readStream(res, s, added => {
             if (thinking && added.reasoning) thought.add(added.reasoning);
             if (added.content) {
                 if (thought.wrote && !answer.wrote) ctx.stderr.write("\n\n");
                 answer.add(added.content);
             }
-        }
+        });
     } catch (e) {
         const x = e as { code?: string; message?: string } | undefined;
         cut = x?.code ? `${x.code}: ${x.message ?? ""}` : String(x?.message ?? e);
