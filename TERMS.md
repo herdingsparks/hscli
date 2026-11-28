@@ -2,7 +2,7 @@
 
 What you can rely on when you use the API with a key issued to you: what it
 serves, the limits of your key, what the errors mean, how fast it is, how
-it is maintained, and how your data is handled. Version 4, 2026-11-25. The
+it is maintained, and how your data is handled. Version 5, 2026-11-28. The
 operator keeps the authoritative copy; this one is kept in step with it.
 Where it says "the host you were sent", that is the API host name that came
 with your key (`HSCLI_API_HOST` for hscli).
@@ -92,7 +92,9 @@ the same object as an SSE event inside a `200` stream (§3). Act on `code`;
 | 413 | `body_too_large` | the body is over 4 MiB | |
 | 429 | `queue_full`, `queue_timeout` | every slot is busy | retry after `Retry-After` |
 | 429 | `quota_exceeded` | today's tokens are used | retry after `Retry-After` (midnight UTC) |
+| 429 | `too_many_pending` | more of your requests are being sent or checked than your streams and queue allow (6 per node) | retry after `Retry-After`; send fewer at once |
 | 502 | `upstream_incomplete`, `upstream_invalid`, `upstream_unavailable`, `upstream_status` | the model failed while answering | retry; it counts its prompt and the output you received |
+| 502 | `upstream_stalled` | the model sent nothing for 15 minutes, so the answer was ended | retry; it counts its prompt and the output you received |
 | 503 | `no_node_available` | neither node could take the request just now | retry after `Retry-After` |
 | 503 | `service_unavailable`, `prompt_count_unavailable` | the model isn't available on that node now | retry after `Retry-After` |
 
